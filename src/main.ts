@@ -5,7 +5,9 @@ import {
 	Modal,
 	Notice,
 	Plugin,
+	WorkspaceLeaf,
 } from 'obsidian';
+import { around } from 'monkey-around';
 import {
 	DEFAULT_SETTINGS,
 	MyPluginSettings,
@@ -14,11 +16,92 @@ import {
 
 // Remember to rename these classes and interfaces!
 
+// --- SPIKE INSTRUMENTATION -------------------------------------------------
+// Temporary logging to answer: which UI close actions call
+// WorkspaceLeaf.prototype.detach(), what is readable on leaf.parent at that
+// point, and how detach ordering relates to active-leaf-change/layout-change.
+// Remove this whole block (and the two calls to it in onload/onunload) once
+// the spike questions in docs/mru-tab-close-plan.md §5 are answered.
+
+let spikeSeq = 0;
+function spikeLog(label: string, data: Record<string, unknown> = {}) {
+	spikeSeq += 1;
+	// eslint-disable-next-line no-console
+	console.log(`[mru-spike #${spikeSeq}] ${label}`, data);
+}
+
+function describeLeaf(leaf: WorkspaceLeaf | null): Record<string, unknown> {
+	if (!leaf) return { leaf: null };
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const parent = (leaf as any).parent;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const parentAny = parent as any;
+	let parentInfo: Record<string, unknown> = { parentType: parent?.constructor?.name };
+	try {
+		if (Array.isArray(parentAny?.children)) {
+			parentInfo = {
+				...parentInfo,
+				childCount: parentAny.children.length,
+				childViewTypes: parentAny.children.map(
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					(c: any) => c?.view?.getViewType?.() ?? c?.view?.getDisplayText?.(),
+				),
+				currentTab: parentAny.currentTab,
+			};
+		}
+	} catch (e) {
+		parentInfo.parentReadError = String(e);
+	}
+	return {
+		viewType: leaf.view?.getViewType?.(),
+		display: leaf.getDisplayText?.(),
+		...parentInfo,
+	};
+}
+
+function installSpikeInstrumentation(plugin: MyPlugin) {
+	plugin.registerEvent(
+		plugin.app.workspace.on('active-leaf-change', (leaf) => {
+			spikeLog('active-leaf-change', describeLeaf(leaf));
+		}),
+	);
+	plugin.registerEvent(
+		plugin.app.workspace.on('layout-change', () => {
+			spikeLog('layout-change', {});
+		}),
+	);
+
+	const uninstall = around(WorkspaceLeaf.prototype, {
+		detach(next) {
+			return function (this: WorkspaceLeaf) {
+				spikeLog('detach:before', describeLeaf(this));
+				const result = next.call(this);
+				spikeLog('detach:after', {
+					newActive: describeLeaf(plugin.app.workspace.activeLeaf),
+				});
+				return result;
+			};
+		},
+	});
+	plugin.register(uninstall);
+
+	plugin.addCommand({
+		id: 'mru-spike-dump-tree',
+		name: '[Spike] Dump active leaf + parent info',
+		callback: () => {
+			spikeLog('manual-dump', describeLeaf(plugin.app.workspace.activeLeaf));
+			new Notice('Dumped active leaf info to console (Ctrl+Shift+I)');
+		},
+	});
+}
+// --- END SPIKE INSTRUMENTATION ----------------------------------------------
+
 export default class MyPlugin extends Plugin {
 	settings!: MyPluginSettings;
 
 	async onload() {
 		await this.loadSettings();
+		installSpikeInstrumentation(this);
 
 		// This creates an icon in the left ribbon.
 		this.addRibbonIcon('dice', 'Sample', (_evt: MouseEvent) => {
