@@ -1,18 +1,18 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
-import MyPlugin from './main';
+import type MruTabClosePlugin from './main';
 
-export interface MyPluginSettings {
-	mySetting: string;
+export interface MruTabCloseSettings {
+	activateMruTabOnClose: boolean;
 }
 
-export const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default',
+export const DEFAULT_SETTINGS: MruTabCloseSettings = {
+	activateMruTabOnClose: true,
 };
 
-export class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+export class MruTabCloseSettingTab extends PluginSettingTab {
+	plugin: MruTabClosePlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: MruTabClosePlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -23,14 +23,15 @@ export class SampleSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName('Settings #1')
-			.setDesc("It's a secret")
-			.addText((text) =>
-				text
-					.setPlaceholder('Enter your secret')
-					.setValue(this.plugin.settings.mySetting)
+			.setName('Activate most recently used tab on close')
+			.setDesc(
+				'When you close a tab, switch to the tab you had open most recently instead of the neighboring tab.',
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.activateMruTabOnClose)
 					.onChange(async (value) => {
-						this.plugin.settings.mySetting = value;
+						this.plugin.settings.activateMruTabOnClose = value;
 						await this.plugin.saveSettings();
 					}),
 			);

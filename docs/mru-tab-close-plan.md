@@ -217,19 +217,23 @@ Perform in a scratch vault after `npm run dev` + linking the build into
 | 6 | Popout window with its own tabs | Close active tab in popout | MRU correction scoped to the popout window only |
 | 7 | Pinned tab open alongside others | Close active unpinned tab with a pinned tab as the MRU candidate | Pinned tab can become active like any other MRU candidate |
 | 8 | Fresh plugin load, tabs never focused via clicking (only just opened) | Close active tab | Falls back to Obsidian default gracefully, no error in console |
-| 9 | "Close other tabs" on a group of 4 | — | No console errors; final active tab is reasonable (exact target TBD after spike) |
+| 9 | "Close other tabs" on a group of 4 | — | No console errors; final active tab is reasonable — **spiked with 3 tabs, confirmed safe (§5.1)**; re-check once with 4+ tabs / a partial bulk-close (e.g. "close tabs to the right") leaving 2+ survivors |
 | 10 | Toggle setting off | Close a tab | Stock Obsidian positional behavior returns |
+
+Rows #1 and #4's core assumptions (× closes via `detach()`; background close is a
+no-op) are already confirmed by the spike (§5.1) — re-running them against the real
+implementation is a quick regression check, not new discovery.
 
 ## 7. Suggested build order
 
-1. Spike: temporary `console.log`-only patch of `detach()` to confirm which UI
-   actions call it, and whether `leaf.parent` reliably exposes children/active tab
-   info needed (§5, item 2). Adjust design if assumptions are wrong.
+1. ~~Spike: temporary `console.log`-only patch of `detach()`~~ — **done**, see §5.1.
+   Core assumptions (detach coverage, no flicker, `instanceof` requirement) hold.
 2. Implement `mru-tracker.ts` (pure logic, unit-testable without Obsidian if the
    tab-group type is abstracted behind a small interface).
 3. Implement `detach-patch.ts` wiring the tracker's lookup into the `around()`
    patch, with the fail-soft guards from §5.
-4. Wire into `main.ts` lifecycle + add the settings toggle.
+4. Wire into `main.ts` lifecycle + add the settings toggle; remove the spike
+   instrumentation block.
 5. Run the manual matrix in §6, focusing first on #1–#4 (single split) before
-   multi-split/popout cases.
-6. Decide on `isDesktopOnly` and bulk-close behavior based on spike findings.
+   multi-split/popout cases (§5.2 item 2, still unverified).
+6. Decide on `isDesktopOnly` (§5.2 item 1) before release.

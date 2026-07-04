@@ -18,5 +18,8 @@ main.js
 # obsidian
 data.json
 
+# scratch vault used for manual plugin testing
+/test-vault
+
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store

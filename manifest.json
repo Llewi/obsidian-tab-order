@@ -1,11 +1,8 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
-	"version": "1.0.0",
+	"id": "mru-tab-close",
+	"name": "MRU tab close",
+	"version": "0.1.0",
 	"minAppVersion": "1.0.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
-	"isDesktopOnly": false
+	"description": "When you close a tab, activates the tab you had open most recently instead of a positional neighbor.",
+	"isDesktopOnly": true
 }
