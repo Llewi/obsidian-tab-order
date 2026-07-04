@@ -4,6 +4,7 @@ import {
 	MruTabCloseSettings,
 	MruTabCloseSettingTab,
 } from './settings';
+import { ClosedTabsStack } from './tab-mru/closed-tabs-stack';
 import { MruTracker } from './tab-mru/mru-tracker';
 import { installMruDetachPatch } from './tab-mru/detach-patch';
 
@@ -20,7 +21,16 @@ export default class MruTabClosePlugin extends Plugin {
 			}),
 		);
 
-		installMruDetachPatch(this, tracker);
+		const closedTabsStack = new ClosedTabsStack();
+		installMruDetachPatch(this, tracker, closedTabsStack);
+
+		this.addCommand({
+			id: 'reopen-last-closed-tab',
+			name: 'Reopen last closed tab',
+			callback: () => {
+				void closedTabsStack.reopenLast(this.app.workspace);
+			},
+		});
 
 		this.addSettingTab(new MruTabCloseSettingTab(this.app, this));
 	}
