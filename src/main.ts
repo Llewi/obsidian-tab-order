@@ -7,6 +7,7 @@ import {
 import { ClosedTabsStack } from './tab-mru/closed-tabs-stack';
 import { MruTracker } from './tab-mru/mru-tracker';
 import { installMruDetachPatch } from './tab-mru/detach-patch';
+import { installReopenClosedTabMenuPatch } from './tab-mru/pane-menu-patch';
 
 export default class MruTabClosePlugin extends Plugin {
 	settings!: MruTabCloseSettings;
@@ -23,6 +24,7 @@ export default class MruTabClosePlugin extends Plugin {
 
 		const closedTabsStack = new ClosedTabsStack();
 		installMruDetachPatch(this, tracker, closedTabsStack);
+		installReopenClosedTabMenuPatch(this, closedTabsStack);
 
 		this.addCommand({
 			id: 'reopen-last-closed-tab',

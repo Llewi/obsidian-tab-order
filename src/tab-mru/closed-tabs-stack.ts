@@ -34,6 +34,10 @@ export class ClosedTabsStack {
 		}
 	}
 
+	hasEntries(): boolean {
+		return this.entries.length > 0;
+	}
+
 	/**
 	 * Reopens the most recently closed tab in a new leaf, if any. Returns
 	 * false when the stack is empty.
